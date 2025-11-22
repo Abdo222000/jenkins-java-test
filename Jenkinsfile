@@ -25,8 +25,6 @@ pipeline {
         stage("Build Docker Image"){
             steps{
                 sh "docker build -t ${DOCKER_USER}/iti-java:v${TAG_VERSION} ."
-                sh "docker images rm -f ${DOCKER_USER}/iti-java:v$((${TAG_VERSION}-2))"
-                sh "docker images rm -f ${DOCKER_USER}/iti-java:v$((${TAG_VERSION}-3))"
             }
         }
         stage("Docker Deploy"){
