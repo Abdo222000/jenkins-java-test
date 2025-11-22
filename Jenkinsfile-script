@@ -24,7 +24,10 @@ node("agent1"){
         }
     }
     stage("Docker Deploy"){
-        withCredentials([usernamePassword(credentialsId: 'docker-username-and-password-id', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+        withCredentials([
+            string(credentialsId: 'docker-username', variable: 'DOCKER_USER'), 
+            string(credentialsId: 'docker-password', variable: 'DOCKER_PASS')
+        ]) {
             docker_java.run("${DOCKER_USER}/iti-java","v${TAG_VERSION}")
         }
     }
