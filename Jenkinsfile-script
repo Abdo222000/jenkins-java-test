@@ -2,7 +2,7 @@ node("agent1"){
     def maven = tool name: "maven-354", type: 'maven'
     def jdk = tool name:"jdk-11", type:"jdk"
     stage("Check SCM"){
-        git branch: 'main', url: 'https://github.com/Hassan-Eid-Hassan/cicd-lab2.git'
+        git branch: 'main', url: 'https://github.com/Abdo222000/jenkins-java-test.git'
     }
     stage("Build Java App"){
         env.PATH = "${maven}/bin:${env.PATH}"
