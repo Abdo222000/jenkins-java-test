@@ -1,42 +1,24 @@
+@Library('abdo.java') _
 node("agent1"){
     def maven = tool name: "maven-354", type: 'maven'
     def jdk = tool name:"jdk-11", type:"jdk"
+    def docker_java = new abdo.java.docker()
     stage("Check SCM"){
         git branch: 'main', url: 'https://github.com/Abdo222000/jenkins-java-test.git'
     }
     stage("Build Java App"){
         env.PATH = "${maven}/bin:${env.PATH}"
-        sh "mvn package install"
+        docker_java.print_java_version()
+        docker_java.install_packages()
     } 
     stage("Test Java App") {
         env.PATH = "${maven}/bin:${env.PATH}"
-        sh "mvn test"
+        docker_java.test_app()
     }
     stage("Build Docker Image"){
-        sh "docker build -t ${DOCKER_USER}/iti-java:v${TAG_VERSION} ." //build the image
+        docker_java.build("${DOCKER_USER}/iti-java","v${TAG_VERSION}")
     }
     stage("Docker Deploy"){
-        def dockerIsRunning = sh(script: "docker ps --filter 'name=iti-java' --filter 'status=running' -q", returnStdout: true).trim()
-        def dockerIsStopped = sh(script: "docker ps --filter 'name=iti-java' --filter 'status=exited' -q", returnStdout: true).trim()
-        echo "Running container ID: ${dockerIsRunning}"
-        echo "Stopped container ID: ${dockerIsStopped}"
-        def fullImageTag = "${DOCKER_USER}/iti-java:v${TAG_VERSION}"
-        if (dockerIsRunning){
-            echo "Container 'iti-java' ${dockerIsRunning} is running. Stopping and redeploying."
-            echo "iti-java is running"
-            sh """
-                docker stop iti-java
-                docker rm iti-java
-                docker run -d -p 8090:8090 --name iti-java ${fullImageTag}
-            """
-        } else if (dockerIsStopped){
-            echo "Container 'iti-java' ${dockerIsStopped} is stopped. Removing and redeploying."
-            echo "iti-java stopped"
-            sh "docker rm iti-java"
-            sh "docker run -d -p 8090:8090 --name iti-java ${fullImageTag}"
-        } else  {
-            echo "No container 'iti-java' found. Deploying new container."
-            sh "docker run -d -p 8090:8090 --name iti-java ${DOCKER_USER}/iti-java:v${TAG_VERSION}"
-        }
+        docker_java.run("${DOCKER_USER}/iti-java","v${TAG_VERSION}")
     }
 }
