@@ -8,26 +8,34 @@ node("agent1"){
         env.PATH = "${maven}/bin:${env.PATH}"
         sh "mvn package install"
     } 
+    stage("Test Java App") {
+        env.PATH = "${maven}/bin:${env.PATH}"
+        sh "mvn test"
+    }
     stage("Build Docker Image"){
         sh "docker build -t ${DOCKER_USER}/iti-java:v${TAG_VERSION} ." //build the image
     }
     stage("Docker Deploy"){
         def dockerIsRunning = sh(script: "docker ps --filter 'name=iti-java' --filter 'status=running' -q", returnStdout: true).trim()
         def dockerIsStopped = sh(script: "docker ps --filter 'name=iti-java' --filter 'status=exited' -q", returnStdout: true).trim()
-        echo "${dockerIsRunning}"
-        echo "${dockerIsStopped}"
+        echo "Running container ID: ${dockerIsRunning}"
+        echo "Stopped container ID: ${dockerIsStopped}"
+        def fullImageTag = "${DOCKER_USER}/iti-java:v${TAG_VERSION}"
         if (dockerIsRunning){
+            echo "Container 'iti-java' ${dockerIsRunning} is running. Stopping and redeploying."
             echo "iti-java is running"
             sh """
                 docker stop iti-java
                 docker rm iti-java
-                docker run -d -p 8090:8090 --name iti-java ${DOCKER_USER}/iti-java:v${TAG_VERSION}
+                docker run -d -p 8090:8090 --name iti-java ${fullImageTag}
             """
         } else if (dockerIsStopped){
+            echo "Container 'iti-java' ${dockerIsStopped} is stopped. Removing and redeploying."
             echo "iti-java stopped"
             sh "docker rm iti-java"
-            sh "docker run -d -p 8090:8090 --name iti-java ${DOCKER_USER}/iti-java:v${TAG_VERSION}"
+            sh "docker run -d -p 8090:8090 --name iti-java ${fullImageTag}"
         } else  {
+            echo "No container 'iti-java' found. Deploying new container."
             sh "docker run -d -p 8090:8090 --name iti-java ${DOCKER_USER}/iti-java:v${TAG_VERSION}"
         }
     }

@@ -1,3 +1,4 @@
+@Library('abdo.java') _
 pipeline {
     agent {
         label 'agent1'
@@ -13,23 +14,35 @@ pipeline {
     stages {
         stage("Build Java App"){
             steps{
-                sh "java --version"
-                sh "mvn package install"
+                script{
+                    def docker_java = new abdo.java.docker()
+                    docker_java.print_java_version()
+                    docker_java.install_packages()
+                }
             }
         }
         stage("Test java App"){
             steps{
-                sh "mvn test"
+                script{
+                    def docker_java = new abdo.java.docker()
+                    docker_java.test_app()
+                }
             }
         }
         stage("Build Docker Image"){
             steps{
-                sh "docker build -t ${DOCKER_USER}/iti-java:v${TAG_VERSION} ."
+                script{
+                    def docker_java = new abdo.java.docker()
+                    docker_java.build("${DOCKER_USER}/iti-java","v${TAG_VERSION}")
+                }
             }
         }
         stage("Docker Deploy"){
             steps{
-                sh "docker run -d -p 8090:8090 --name iti-java ${DOCKER_USER}/iti-java:v${TAG_VERSION}"
+                script{
+                    def docker_java = new abdo.java.docker()
+                    docker_java.run("${DOCKER_USER}/iti-java","v${TAG_VERSION}")
+                }
             }
         }
     }
